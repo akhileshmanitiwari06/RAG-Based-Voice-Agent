@@ -1,0 +1,9 @@
+{
+  "template_id": "reboot_node",
+  "intent": "reboot_node",
+  "operation": "ACTION",
+  "risk": "CRITICAL",
+  "description": "Reboot a target node using the approved controlled workflow.",
+  "source": "approved_command_library",
+  "verification": "node availability is verified after the operation"
+}

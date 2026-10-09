@@ -1,0 +1,9 @@
+{
+  "template_id": "check_interface",
+  "intent": "check_interface",
+  "operation": "READ",
+  "risk": "READ",
+  "description": "Check the operational state of a specified network interface on a target node.",
+  "source": "approved_command_library",
+  "verification": "interface state returned successfully"
+}

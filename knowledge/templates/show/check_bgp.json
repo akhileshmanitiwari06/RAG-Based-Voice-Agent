@@ -1,0 +1,9 @@
+{
+  "template_id": "check_bgp",
+  "intent": "check_bgp",
+  "operation": "READ",
+  "risk": "LOW",
+  "description": "Check BGP peer/session status for a target node.",
+  "source": "approved_command_library",
+  "verification": "BGP status returned successfully"
+}

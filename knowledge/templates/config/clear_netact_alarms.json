@@ -1,0 +1,9 @@
+{
+  "template_id": "clear_netact_alarms",
+  "intent": "clear_netact_alarms",
+  "operation": "CONFIG",
+  "risk": "HIGH",
+  "description": "Clear NetAct alarms through the approved configuration workflow on a target node.",
+  "source": "approved_command_library",
+  "verification": "configuration state is verified after execution"
+}

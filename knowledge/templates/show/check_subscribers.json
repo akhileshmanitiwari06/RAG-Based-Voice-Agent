@@ -1,0 +1,9 @@
+{
+  "template_id": "check_subscribers",
+  "intent": "check_subscribers",
+  "operation": "READ",
+  "risk": "LOW",
+  "description": "Retrieve LTE subscriber statistics for a target node.",
+  "source": "approved_command_library",
+  "verification": "subscriber statistics returned successfully"
+}

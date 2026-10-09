@@ -1,0 +1,9 @@
+{
+  "template_id": "check_system_health",
+  "intent": "check_system_health",
+  "operation": "READ",
+  "risk": "READ",
+  "description": "Check overall system health information for a target node.",
+  "source": "approved_command_library",
+  "verification": "system health information returned successfully"
+}

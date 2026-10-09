@@ -1,0 +1,9 @@
+{
+  "template_id": "check_alarms",
+  "intent": "check_alarms",
+  "operation": "READ",
+  "risk": "LOW",
+  "description": "Retrieve active alarms for a target node.",
+  "source": "approved_command_library",
+  "verification": "alarm information returned successfully"
+}

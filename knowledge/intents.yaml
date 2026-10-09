@@ -1,0 +1,82 @@
+intents:
+
+  - id: check_subscribers
+    name: Check Subscribers
+    operation: READ
+    risk: LOW
+    description: Check subscriber statistics for a target node
+    required_parameters:
+      - node
+    confirmation_required: false
+
+  - id: check_bgp
+    name: Check BGP
+    operation: READ
+    risk: LOW
+    description: Check BGP neighbour status for a target node
+    required_parameters:
+      - node
+    confirmation_required: false
+
+  - id: check_alarms
+    name: Check Alarms
+    operation: READ
+    risk: LOW
+    description: Check active alarms for a target node
+    required_parameters:
+      - node
+    confirmation_required: false
+
+  - id: check_interface
+    name: Check Interface
+    operation: READ
+    risk: LOW
+    description: Check interface health for a target node
+    required_parameters:
+      - node
+    confirmation_required: false
+
+  - id: check_system_health
+    name: Check System Health
+    operation: READ
+    risk: LOW
+    description: Check overall system health
+    required_parameters:
+      - node
+    confirmation_required: false
+
+  - id: generate_netact_alarms
+    name: Generate NetAct Alarms
+    operation: CONFIG
+    risk: HIGH
+    description: Perform the approved alarm generation configuration operation
+    required_parameters:
+      - node
+    confirmation_required: true
+
+  - id: clear_netact_alarms
+    name: Clear NetAct Alarms
+    operation: CONFIG
+    risk: HIGH
+    description: Perform the approved alarm clearing configuration operation
+    required_parameters:
+      - node
+    confirmation_required: true
+
+  - id: save_configuration
+    name: Save Configuration
+    operation: ACTION
+    risk: MEDIUM
+    description: Save the current configuration
+    required_parameters:
+      - node
+    confirmation_required: true
+
+  - id: reboot_node
+    name: Reboot Node
+    operation: CRITICAL
+    risk: CRITICAL
+    description: Reboot a target node
+    required_parameters:
+      - node
+    confirmation_required: true

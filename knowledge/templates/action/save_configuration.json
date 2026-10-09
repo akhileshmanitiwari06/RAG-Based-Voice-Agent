@@ -1,0 +1,9 @@
+{
+  "template_id": "save_configuration",
+  "intent": "save_configuration",
+  "operation": "ACTION",
+  "risk": "ACTION",
+  "description": "Save the current configuration of a target node using the approved workflow.",
+  "source": "approved_command_library",
+  "verification": "configuration save operation is confirmed"
+}
