@@ -1,3 +1,4 @@
+
 from copy import deepcopy
 
 
@@ -32,6 +33,10 @@ class DeviceSimulator:
             },
         }
 
+        # Store pre-operation state so rollback can restore it.
+        self._rollback_snapshots = {}
+        self._verification_baselines = {}
+
         # Used only for controlled rollback/failure testing.
         self.force_verification_failure = False
 
@@ -46,7 +51,6 @@ class DeviceSimulator:
 
     def show_subscribers(self, node: str):
         device = self._get_device(node)
-
         return {
             "success": True,
             "node": node,
@@ -56,7 +60,6 @@ class DeviceSimulator:
 
     def show_bgp(self, node: str):
         device = self._get_device(node)
-
         return {
             "node": node,
             "bgp_status": device["bgp"],
@@ -65,7 +68,6 @@ class DeviceSimulator:
 
     def show_alarms(self, node: str):
         device = self._get_device(node)
-
         return {
             "node": node,
             "active_alarms": device["alarms"],
@@ -74,7 +76,6 @@ class DeviceSimulator:
 
     def show_interface(self, node: str, interface: str):
         device = self._get_device(node)
-
         state = device["interfaces"].get(interface)
 
         if state is None:
@@ -99,13 +100,14 @@ class DeviceSimulator:
         device = self._get_device(node)
 
         if operation == "generate_netact_alarms":
+            before = device["alarms"]
             return {
                 "node": node,
                 "operation": operation,
                 "dry_run": True,
-                "before": device["netact_alarm_port"],
-                "after": "DOWN",
-                "change": "Simulated NetAct alarm port would be disabled",
+                "before": before,
+                "after": before + 1,
+                "change": "One simulated NetAct alarm would be generated",
             }
 
         if operation == "clear_netact_alarms":
@@ -113,9 +115,9 @@ class DeviceSimulator:
                 "node": node,
                 "operation": operation,
                 "dry_run": True,
-                "before": device["netact_alarm_port"],
-                "after": "UP",
-                "change": "Port would be enabled",
+                "before": device["alarms"],
+                "after": 0,
+                "change": "All simulated active alarms would be cleared",
             }
 
         if operation == "save_configuration":
@@ -123,6 +125,8 @@ class DeviceSimulator:
                 "node": node,
                 "operation": operation,
                 "dry_run": True,
+                "before": device["config_saved"],
+                "after": True,
                 "change": "Current configuration would be saved",
             }
 
@@ -131,7 +135,9 @@ class DeviceSimulator:
                 "node": node,
                 "operation": operation,
                 "dry_run": True,
-                "change": "Node would be rebooted",
+                "before": device["reboot_count"],
+                "after": device["reboot_count"] + 1,
+                "change": "The simulated node would be rebooted",
             }
 
         raise ValueError(f"Unsupported operation: {operation}")
@@ -139,20 +145,29 @@ class DeviceSimulator:
     def apply(self, node: str, operation: str):
         device = self._get_device(node)
 
+        if operation not in {
+            "generate_netact_alarms",
+            "clear_netact_alarms",
+            "save_configuration",
+            "reboot_node",
+        }:
+            raise ValueError(f"Unsupported operation: {operation}")
+
+        # Save the original state before modifying anything.
+        self._rollback_snapshots[(node, operation)] = deepcopy(device)
+        self._verification_baselines[(node, operation)] = deepcopy(device)
+
         if operation == "generate_netact_alarms":
-            device["netact_alarm_port"] = "DOWN"
+            device["alarms"] += 1
 
         elif operation == "clear_netact_alarms":
-            device["netact_alarm_port"] = "UP"
+            device["alarms"] = 0
 
         elif operation == "save_configuration":
             device["config_saved"] = True
 
         elif operation == "reboot_node":
             device["reboot_count"] += 1
-
-        else:
-            raise ValueError(f"Unsupported operation: {operation}")
 
         return {
             "node": node,
@@ -167,7 +182,6 @@ class DeviceSimulator:
     def verify(self, node: str, operation: str):
         device = self._get_device(node)
 
-        # Controlled failure injection for rollback testing.
         if self.force_verification_failure:
             return {
                 "node": node,
@@ -177,17 +191,25 @@ class DeviceSimulator:
                 "reason": "Simulated verification failure",
             }
 
+        baseline = self._verification_baselines.get((node, operation))
+
         if operation == "generate_netact_alarms":
-            passed = device["netact_alarm_port"] == "DOWN"
+            passed = (
+                baseline is not None
+                and device["alarms"] == baseline["alarms"] + 1
+            )
 
         elif operation == "clear_netact_alarms":
-            passed = device["netact_alarm_port"] == "UP"
+            passed = device["alarms"] == 0
 
         elif operation == "save_configuration":
             passed = device["config_saved"] is True
 
         elif operation == "reboot_node":
-            passed = device["reboot_count"] > 0
+            passed = (
+                baseline is not None
+                and device["reboot_count"] == baseline["reboot_count"] + 1
+            )
 
         else:
             raise ValueError(f"Unsupported operation: {operation}")
@@ -205,26 +227,22 @@ class DeviceSimulator:
 
     def rollback(self, node: str, operation: str):
         device = self._get_device(node)
+        snapshot = self._rollback_snapshots.get((node, operation))
 
-        if operation == "generate_netact_alarms":
-            device["netact_alarm_port"] = "UP"
+        if snapshot is None:
+            return {
+                "node": node,
+                "operation": operation,
+                "status": "rollback_unavailable",
+                "reason": "No saved pre-operation state exists",
+            }
 
-        elif operation == "clear_netact_alarms":
-            device["netact_alarm_port"] = "DOWN"
+        # Restore the complete simulated state to its prior snapshot.
+        device.clear()
+        device.update(deepcopy(snapshot))
 
-        elif operation == "save_configuration":
-            device["config_saved"] = False
-
-        elif operation == "reboot_node":
-            # Simulator cannot truly undo a reboot.
-            # We only record rollback handling.
-            device["reboot_count"] = max(
-                0,
-                device["reboot_count"] - 1
-            )
-
-        else:
-            raise ValueError(f"Unsupported operation: {operation}")
+        self._rollback_snapshots.pop((node, operation), None)
+        self._verification_baselines.pop((node, operation), None)
 
         return {
             "node": node,
